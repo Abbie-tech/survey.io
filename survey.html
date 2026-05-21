@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>意見調查</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --accent: #c84b31;
+    --green: #2d6a4f;
+    --mid: #4a4e69;
+    --light: #e8e2d5;
+    --s1: #e63946; /* 非常不同意 */
+    --s2: #f4a261; /* 不同意 */
+    --s3: #2a9d8f; /* 同意 */
+    --s4: #264653; /* 非常同意 */
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  /* ── Intro screen ── */
+  #screen-intro {
+    max-width: 520px;
+    width: 100%;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .tag::before {
+    content: '';
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  .description-box {
+    background: #fff;
+    border: 2px solid var(--ink);
+    padding: 2rem 2rem 1.8rem;
+    box-shadow: 7px 7px 0 var(--ink);
+    margin-bottom: 2rem;
+    position: relative;
+  }
+
+  .description-box::before {
+    content: '「';
+    font-size: 5rem;
+    color: var(--light);
+    position: absolute;
+    top: -1rem;
+    left: 1rem;
+    font-family: serif;
+    line-height: 1;
+  }
+
+  .description-text {
+    font-size: 1.15rem;
+    line-height: 1.8;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+  }
+
+  .instruction {
+    font-size: 0.9rem;
+    color: var(--mid);
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── Option buttons ── */
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+  }
+
+  .opt-btn {
+    border: 2px solid var(--ink);
+    padding: 1rem 0.8rem;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    background: #fff;
+    color: var(--ink);
+    transition: all 0.15s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .opt-btn .emoji {
+    display: block;
+    font-size: 1.6rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .opt-btn:hover {
+    transform: translate(-3px, -3px);
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+
+  .opt-btn.s1:hover, .opt-btn.s1:focus { background: var(--s1); color: #fff; border-color: var(--s1); box-shadow: 5px 5px 0 var(--ink); }
+  .opt-btn.s2:hover, .opt-btn.s2:focus { background: var(--s2); color: #fff; border-color: var(--s2); box-shadow: 5px 5px 0 var(--ink); }
+  .opt-btn.s3:hover, .opt-btn.s3:focus { background: var(--s3); color: #fff; border-color: var(--s3); box-shadow: 5px 5px 0 var(--ink); }
+  .opt-btn.s4:hover, .opt-btn.s4:focus { background: var(--s4); color: #fff; border-color: var(--s4); box-shadow: 5px 5px 0 var(--ink); }
+
+  .opt-btn:active { transform: translate(0, 0); box-shadow: none; }
+
+  /* ── Thank you screen ── */
+  #screen-thanks {
+    display: none;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .thanks-card {
+    background: #fff;
+    border: 2px solid var(--ink);
+    padding: 3rem 2rem;
+    box-shadow: 7px 7px 0 var(--ink);
+  }
+
+  .result-badge {
+    display: inline-block;
+    padding: 0.5rem 1.2rem;
+    border: 2px solid var(--ink);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.05em;
+  }
+
+  .big-emoji {
+    font-size: 3.5rem;
+    display: block;
+    margin-bottom: 1rem;
+    animation: pop 0.4s ease both 0.1s;
+  }
+
+  .thanks-title {
+    font-size: 1.5rem;
+    font-weight: 900;
+    margin-bottom: 0.5rem;
+  }
+
+  .thanks-sub {
+    font-size: 0.9rem;
+    color: var(--mid);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+
+  /* Bar chart of mock results */
+  .result-chart {
+    text-align: left;
+    margin-top: 1.5rem;
+    border-top: 2px solid var(--light);
+    padding-top: 1.5rem;
+  }
+
+  .result-chart h3 {
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--mid);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 1rem;
+  }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+    font-size: 0.85rem;
+  }
+
+  .bar-label {
+    width: 90px;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 18px;
+    background: var(--light);
+    border: 1px solid #ccc;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    width: 0;
+  }
+
+  .bar-pct {
+    width: 36px;
+    text-align: right;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--mid);
+  }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pop {
+    0%   { transform: scale(0.5); opacity: 0; }
+    70%  { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Mobile */
+  @media (max-width: 360px) {
+    .options { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .opt-btn { padding: 0.8rem 0.5rem; font-size: 0.9rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ───── INTRO / SURVEY SCREEN ───── -->
+<div id="screen-intro">
+  <p class="tag">意見調查</p>
+
+  <div class="description-box">
+    <p class="description-text" id="desc-text">載入中…</p>
+  </div>
+
+  <p class="instruction">請選擇您對以上敘述的看法</p>
+
+  <div class="options">
+    <button class="opt-btn s4" onclick="vote('非常同意', this)">
+      <span class="emoji">😊</span>非常同意
+    </button>
+    <button class="opt-btn s3" onclick="vote('同意', this)">
+      <span class="emoji">🙂</span>同意
+    </button>
+    <button class="opt-btn s2" onclick="vote('不同意', this)">
+      <span class="emoji">😐</span>不同意
+    </button>
+    <button class="opt-btn s1" onclick="vote('非常不同意', this)">
+      <span class="emoji">😞</span>非常不同意
+    </button>
+  </div>
+</div>
+
+<!-- ───── THANK YOU SCREEN ───── -->
+<div id="screen-thanks">
+  <div class="thanks-card">
+    <span class="big-emoji" id="thanks-emoji">🎉</span>
+    <div class="result-badge" id="result-badge">您選擇了：非常同意</div>
+    <h2 class="thanks-title">感謝您的回覆！</h2>
+    <p class="thanks-sub">您的意見已成功記錄，<br>非常感謝您撥冗參與本次調查。</p>
+
+    <div class="result-chart">
+      <h3>目前統計結果</h3>
+      <div class="bar-row">
+        <span class="bar-label">非常同意</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-s4" style="background:var(--s4)"></div></div>
+        <span class="bar-pct" id="pct-s4">0%</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">同意</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-s3" style="background:var(--s3)"></div></div>
+        <span class="bar-pct" id="pct-s3">0%</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">不同意</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-s2" style="background:var(--s2)"></div></div>
+        <span class="bar-pct" id="pct-s2">0%</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">非常不同意</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-s1" style="background:var(--s1)"></div></div>
+        <span class="bar-pct" id="pct-s1">0%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Read description from URL ?desc= ──────────────────────────
+const params = new URLSearchParams(window.location.search);
+const desc = params.get('desc') || '請提供問卷敘述（在 URL 中加入 ?desc=您的內容）';
+document.getElementById('desc-text').textContent = desc;
+
+// ── Persistent vote counts (localStorage, keyed by desc hash) ─
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return Math.abs(h).toString(16);
+}
+
+const KEY = 'survey_' + hashStr(desc);
+
+function loadCounts() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || { s4:0, s3:0, s2:0, s1:0 }; }
+  catch { return { s4:0, s3:0, s2:0, s1:0 }; }
+}
+
+function saveCounts(c) {
+  try { localStorage.setItem(KEY, JSON.stringify(c)); } catch {}
+}
+
+// ── Vote handler ───────────────────────────────────────────────
+const emojiMap = { '非常同意':'😊', '同意':'🙂', '不同意':'😐', '非常不同意':'😞' };
+const keyMap   = { '非常同意':'s4',  '同意':'s3',  '不同意':'s2',  '非常不同意':'s1' };
+
+function vote(choice, btn) {
+  // Disable all buttons
+  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+
+  // Save
+  const counts = loadCounts();
+  counts[keyMap[choice]]++;
+  saveCounts(counts);
+
+  // Show result
+  document.getElementById('thanks-emoji').textContent = emojiMap[choice];
+  document.getElementById('result-badge').textContent = '您選擇了：' + choice;
+
+  // Animate transition
+  setTimeout(() => {
+    document.getElementById('screen-intro').style.display = 'none';
+    document.getElementById('screen-thanks').style.display = 'block';
+    renderBars(counts);
+  }, 300);
+}
+
+function renderBars(counts) {
+  const total = counts.s4 + counts.s3 + counts.s2 + counts.s1 || 1;
+  ['s4','s3','s2','s1'].forEach(k => {
+    const pct = Math.round(counts[k] / total * 100);
+    document.getElementById('pct-' + k).textContent = pct + '%';
+    setTimeout(() => {
+      document.getElementById('bar-' + k).style.width = pct + '%';
+    }, 50);
+  });
+}
+</script>
+</body>
+</html>
