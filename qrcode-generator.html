@@ -51,8 +51,15 @@
   .url-display { margin-top:1rem; padding:0.75rem; background:var(--light); border:1px solid var(--ink); font-family:'Space Mono',monospace; font-size:0.75rem; word-break:break-all; color:var(--mid); }
   .divider { border:none; border-top:2px solid var(--light); margin:2rem 0; }
   .hint { font-size:0.8rem; color:var(--mid); margin-top:0.5rem; line-height:1.6; }
-  .admin-link { margin-top:1rem; text-align:center; font-size:0.85rem; }
-  .admin-link a { color:var(--accent); font-weight:700; font-family:'Space Mono',monospace; }
+  .admin-link { margin-top:1rem; text-align:center; }
+  .admin-link a {
+    display:inline-block; background:var(--accent); color:#fff;
+    border:2px solid var(--ink); padding:0.8rem 1.5rem;
+    font-family:'Space Mono',monospace; font-size:0.9rem; font-weight:700;
+    text-decoration:none; letter-spacing:0.05em;
+    transition:all 0.15s;
+  }
+  .admin-link a:hover { transform:translate(-2px,-2px); box-shadow:4px 4px 0 var(--ink); }
 </style>
 </head>
 <body>
@@ -73,12 +80,12 @@
   <button onclick="generateQR()">產生 QR Code</button>
   <div class="qr-section" id="qrSection">
     <hr class="divider">
+    <div class="admin-link" style="margin-bottom:1.5rem;">
+      <a id="adminLink" href="#" target="_blank">📊 開啟後台查看結果</a>
+    </div>
     <p class="qr-label">掃描此 QR Code 進入問卷</p>
     <div id="qrcode"></div>
     <div class="url-display" id="urlDisplay"></div>
-    <div class="admin-link">
-      <a id="adminLink" href="#" target="_blank">📊 開啟後台查看結果</a>
-    </div>
   </div>
 </div>
 <script>
