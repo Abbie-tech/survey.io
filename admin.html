@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>後台管理 — 問卷結果</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap');
+  :root {
+    --ink:#1a1a2e; --paper:#f5f0e8; --accent:#c84b31;
+    --mid:#4a4e69; --light:#e8e2d5;
+    --s1:#e63946; --s2:#f4a261; --s3:#2a9d8f; --s4:#264653;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Noto Sans TC',sans-serif; background:#f0f0f0; color:var(--ink); min-height:100vh; }
+
+  /* Header */
+  .header {
+    background:var(--ink); color:#fff; padding:1.2rem 2rem;
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:1rem;
+  }
+  .header h1 { font-family:'Space Mono',monospace; font-size:1rem; letter-spacing:0.15em; }
+  .live-dot { display:inline-flex; align-items:center; gap:0.4rem; font-size:0.8rem; color:#a0f0a0; font-family:'Space Mono',monospace; }
+  .live-dot::before { content:''; display:block; width:8px; height:8px; border-radius:50%; background:#4caf50; animation:blink 1.2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  .container { max-width:800px; margin:2rem auto; padding:0 1.5rem; }
+
+  /* Question card */
+  .question-card {
+    background:#fff; border:2px solid var(--ink); padding:1.5rem 2rem;
+    box-shadow:5px 5px 0 var(--ink); margin-bottom:2rem;
+  }
+  .question-card .qlabel {
+    font-family:'Space Mono',monospace; font-size:0.7rem; letter-spacing:0.2em;
+    text-transform:uppercase; color:var(--accent); margin-bottom:0.5rem;
+  }
+  .question-card .qtext { font-size:1.05rem; font-weight:600; line-height:1.6; }
+
+  /* Stats grid */
+  .stats-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; margin-bottom:2rem; }
+  .stat-card {
+    background:#fff; border:2px solid var(--ink); padding:1.2rem 1.5rem;
+    box-shadow:4px 4px 0 var(--ink); text-align:center;
+  }
+  .stat-card .stat-num { font-family:'Space Mono',monospace; font-size:2.5rem; font-weight:700; line-height:1; }
+  .stat-card .stat-label { font-size:0.8rem; color:var(--mid); margin-top:0.4rem; }
+  .stat-card.total .stat-num { color:var(--ink); }
+  .stat-card.top .stat-num { color:var(--s3); }
+
+  /* Bar chart */
+  .chart-card { background:#fff; border:2px solid var(--ink); padding:1.5rem 2rem; box-shadow:5px 5px 0 var(--ink); margin-bottom:2rem; }
+  .chart-card h2 { font-family:'Space Mono',monospace; font-size:0.8rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--mid); margin-bottom:1.5rem; }
+  .bar-row { display:flex; align-items:center; gap:1rem; margin-bottom:1rem; }
+  .bar-emoji { font-size:1.4rem; width:28px; text-align:center; flex-shrink:0; }
+  .bar-label { width:80px; font-size:0.9rem; font-weight:600; flex-shrink:0; }
+  .bar-track { flex:1; height:28px; background:var(--light); border:1px solid #ccc; position:relative; overflow:hidden; border-radius:2px; }
+  .bar-fill { height:100%; transition:width 1s cubic-bezier(0.22,1,0.36,1); width:0; display:flex; align-items:center; justify-content:flex-end; padding-right:8px; }
+  .bar-fill span { font-family:'Space Mono',monospace; font-size:0.75rem; color:#fff; font-weight:700; }
+  .bar-meta { display:flex; flex-direction:column; align-items:flex-end; width:56px; flex-shrink:0; }
+  .bar-pct { font-family:'Space Mono',monospace; font-size:0.9rem; font-weight:700; }
+  .bar-cnt { font-size:0.75rem; color:var(--mid); }
+
+  /* Refresh */
+  .footer { text-align:center; padding-bottom:3rem; }
+  .refresh-btn {
+    background:var(--ink); color:#fff; border:2px solid var(--ink);
+    padding:0.7rem 1.8rem; font-family:'Space Mono',monospace; font-size:0.85rem;
+    cursor:pointer; letter-spacing:0.1em; transition:all 0.15s;
+  }
+  .refresh-btn:hover { background:var(--accent); border-color:var(--accent); transform:translate(-2px,-2px); box-shadow:4px 4px 0 var(--ink); }
+  .last-updated { font-size:0.8rem; color:var(--mid); margin-top:0.8rem; font-family:'Space Mono',monospace; }
+
+  /* Reset */
+  .reset-btn {
+    background:#fff; color:var(--s1); border:2px solid var(--s1);
+    padding:0.7rem 1.8rem; font-family:'Space Mono',monospace; font-size:0.85rem;
+    cursor:pointer; letter-spacing:0.1em; transition:all 0.15s; margin-left:0.8rem;
+  }
+  .reset-btn:hover { background:var(--s1); color:#fff; transform:translate(-2px,-2px); box-shadow:4px 4px 0 var(--ink); }
+
+  .no-desc { text-align:center; padding:4rem 2rem; color:var(--mid); }
+
+  @media(max-width:480px) {
+    .stats-grid { grid-template-columns:1fr 1fr; }
+    .bar-label { width:60px; font-size:0.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📊 問卷後台管理</h1>
+  <span class="live-dot">即時更新中</span>
+</div>
+
+<div class="container">
+  <div id="main-content">
+    <p style="text-align:center;color:var(--mid);padding:3rem">載入中…</p>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCg4CEB_eFT_vcsj6AAewxecc4pNz0Tiy8",
+    authDomain: "survey-90634.firebaseapp.com",
+    databaseURL: "https://survey-90634-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "survey-90634",
+    storageBucket: "survey-90634.firebasestorage.app",
+    messagingSenderId: "608308644859",
+    appId: "1:608308644859:web:e7cf774dbd7977e7f7195e"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const params = new URLSearchParams(window.location.search);
+  const desc = params.get('desc');
+
+  if (!desc) {
+    document.getElementById('main-content').innerHTML = `
+      <div class="no-desc">
+        <p style="font-size:2rem;margin-bottom:1rem">🔍</p>
+        <p>請從 QR Code 產生器點選「開啟後台查看結果」連結，<br>或在網址後加上 <code>?desc=您的問卷題目</code></p>
+      </div>`;
+  } else {
+    const surveyKey = 'survey_' + btoa(encodeURIComponent(desc)).replace(/[^a-zA-Z0-9]/g,'').substring(0,40);
+    const surveyRef = ref(db, `surveys/${surveyKey}`);
+
+    const options = [
+      { key:'s4', label:'非常同意', emoji:'😊', color:'var(--s4)' },
+      { key:'s3', label:'同意',     emoji:'🙂', color:'var(--s3)' },
+      { key:'s2', label:'不同意',   emoji:'😐', color:'var(--s2)' },
+      { key:'s1', label:'非常不同意',emoji:'😞', color:'var(--s1)' },
+    ];
+
+    // Render skeleton
+    document.getElementById('main-content').innerHTML = `
+      <div class="question-card">
+        <p class="qlabel">問卷題目</p>
+        <p class="qtext">${desc}</p>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card total"><div class="stat-num" id="stat-total">—</div><div class="stat-label">總投票數</div></div>
+        <div class="stat-card top"><div class="stat-num" id="stat-top">—</div><div class="stat-label">最多人選擇</div></div>
+      </div>
+      <div class="chart-card">
+        <h2>各選項票數</h2>
+        ${options.map(o => `
+          <div class="bar-row">
+            <span class="bar-emoji">${o.emoji}</span>
+            <span class="bar-label">${o.label}</span>
+            <div class="bar-track">
+              <div class="bar-fill" id="bar-${o.key}" style="background:${o.color}">
+                <span id="bar-inner-${o.key}"></span>
+              </div>
+            </div>
+            <div class="bar-meta">
+              <span class="bar-pct" id="pct-${o.key}">0%</span>
+              <span class="bar-cnt" id="cnt-${o.key}">0 票</span>
+            </div>
+          </div>`).join('')}
+      </div>
+      <div class="footer">
+        <button class="refresh-btn" onclick="location.reload()">🔄 手動重新整理</button>
+        <button class="reset-btn" id="resetBtn">🗑 清除所有資料</button>
+        <p class="last-updated" id="last-updated"></p>
+      </div>`;
+
+    // Reset button
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      if (confirm('確定要清除所有投票資料嗎？此操作無法復原。')) {
+        set(surveyRef, { s1:0, s2:0, s3:0, s4:0 });
+      }
+    });
+
+    // Real-time listener
+    onValue(surveyRef, (snap) => {
+      const data = snap.val() || {};
+      const c = { s4: data.s4||0, s3: data.s3||0, s2: data.s2||0, s1: data.s1||0 };
+      const total = c.s4 + c.s3 + c.s2 + c.s1;
+
+      document.getElementById('stat-total').textContent = total;
+
+      // Find top option
+      const maxKey = Object.entries(c).sort((a,b) => b[1]-a[1])[0];
+      const labelMap = { s4:'非常同意', s3:'同意', s2:'不同意', s1:'非常不同意' };
+      document.getElementById('stat-top').textContent = total > 0 ? labelMap[maxKey[0]] : '—';
+
+      options.forEach(o => {
+        const pct = total > 0 ? Math.round(c[o.key] / total * 100) : 0;
+        document.getElementById('pct-' + o.key).textContent = pct + '%';
+        document.getElementById('cnt-' + o.key).textContent = c[o.key] + ' 票';
+        document.getElementById('bar-inner-' + o.key).textContent = pct > 10 ? pct + '%' : '';
+        setTimeout(() => {
+          document.getElementById('bar-' + o.key).style.width = pct + '%';
+        }, 100);
+      });
+
+      const now = new Date();
+      document.getElementById('last-updated').textContent =
+        `最後更新：${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+    });
+  }
+</script>
+</body>
+</html>
